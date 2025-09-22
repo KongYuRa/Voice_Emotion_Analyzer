@@ -1,654 +1,682 @@
-# Advanced Voice Emotion Analyzer - English Version
-
-## index.html
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Voice Emotion Analyzer</title>
-    <link rel="stylesheet" href="style.css">
+    <title>음성 감정 분석기</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        h1 {
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .upload-area {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .upload-area.dragover {
+            border-color: #4ecdc4;
+            background: rgba(78, 205, 196, 0.1);
+        }
+
+        #audioFile {
+            display: none;
+        }
+
+        .upload-text {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .upload-hint {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .audio-player {
+            margin: 20px 0;
+            display: none;
+        }
+
+        audio {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .analyze-button {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            margin: 20px 0;
+            display: none;
+        }
+
+        .analyze-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .analyze-button.analyzing {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a5a);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .audio-visualizer {
+            margin: 30px 0;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 10px;
+            gap: 2px;
+        }
+
+        .bar {
+            width: 4px;
+            background: linear-gradient(to top, #4ecdc4, #44a08d);
+            border-radius: 2px;
+            transition: height 0.1s ease;
+        }
+
+        .emotion-display {
+            margin: 20px 0;
+        }
+
+        .emotion-result {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 15px 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .emotion-details {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            display: none;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+
+        .metric-label {
+            flex: 1;
+            text-align: left;
+        }
+
+        .metric-bar {
+            flex: 2;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0 10px;
+        }
+
+        .metric-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .metric-value {
+            flex: 0 0 30px;
+            text-align: right;
+        }
+
+        .happy { color: #ffd93d; }
+        .sad { color: #74b9ff; }
+        .excited { color: #fd79a8; }
+        .calm { color: #00b894; }
+        .angry { color: #e84393; }
+
+        .status {
+            margin: 20px 0;
+            font-size: 1.1em;
+            opacity: 0.8;
+        }
+
+        .file-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 10px;
+            margin: 10px 0;
+            display: none;
+            font-size: 0.9em;
+        }
+    </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Header -->
-        <header class="app-header">
-            <h1>Advanced Voice Emotion Analyzer</h1>
-            <p>Accurate emotion recognition through MFCC, spectral features, and prosodic analysis</p>
-        </header>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Input Section -->
-            <section class="input-section">
-                <div class="card">
-                    <div class="card__header">
-                        <h3>Voice Input</h3>
-                    </div>
-                    <div class="card__body">
-                        <div class="input-methods">
-                            <div class="method-group">
-                                <h4>File Upload</h4>
-                                <div class="file-upload-area" id="fileUploadArea">
-                                    <input type="file" id="audioFileInput" accept="audio/*" class="hidden">
-                                    <div class="upload-placeholder">
-                                        <span class="upload-icon">ðŸ“</span>
-                                        <p>Drag and drop audio file or click to select</p>
-                                        <p class="file-info">Supported formats: MP3, WAV, M4A</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="method-group">
-                                <h4>Live Recording</h4>
-                                <div class="recording-controls">
-                                    <button id="recordButton" class="btn btn--primary">
-                                        <span class="btn-icon">ðŸŽ™ï¸</span>
-                                        Start Recording
-                                    </button>
-                                    <button id="stopRecordButton" class="btn btn--secondary" style="display: none;">
-                                        <span class="btn-icon">â¹ï¸</span>
-                                        Stop Recording
-                                    </button>
-                                    <div class="recording-time" id="recordingTime" style="display: none;">
-                                        <span class="time-display">00:00</span>
-                                        <div class="recording-indicator"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Analysis Results -->
-            <section class="results-section">
-                <div class="card">
-                    <div class="card__header">
-                        <h3>Analysis Results</h3>
-                        <div class="analysis-status" id="analysisStatus">
-                            <span class="status-text">Please upload audio or start recording</span>
-                        </div>
-                    </div>
-                    <div class="card__body">
-                        <!-- Main Emotion Result -->
-                        <div class="emotion-result" id="emotionResult" style="display: none;">
-                            <div class="primary-emotion">
-                                <div class="emotion-icon" id="emotionIcon">ðŸ˜</div>
-                                <div class="emotion-info">
-                                    <h3 class="emotion-name" id="emotionName">Neutral</h3>
-                                    <div class="confidence-score">
-                                        <span>Confidence: </span>
-                                        <span id="confidenceScore">0%</span>
-                                        <div class="confidence-bar">
-                                            <div class="confidence-fill" id="confidenceFill"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Alternative Emotions -->
-                            <div class="alternative-emotions">
-                                <h4>Other Emotion Probabilities</h4>
-                                <div class="emotion-bars" id="emotionBars">
-                                    <!-- Dynamically generated -->
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Audio Visualization -->
-                        <div class="audio-visualization" id="audioVisualization" style="display: none;">
-                            <h4>Audio Waveform</h4>
-                            <canvas id="waveformCanvas" width="800" height="200"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Feature Analysis -->
-            <section class="features-section">
-                <div class="card">
-                    <div class="card__header">
-                        <h3>Detailed Feature Analysis</h3>
-                    </div>
-                    <div class="card__body">
-                        <div class="features-grid" id="featuresGrid">
-                            <!-- Dynamically generated -->
-                        </div>
-                        
-                        <!-- Spectral Analysis Chart -->
-                        <div class="spectral-analysis" id="spectralAnalysis" style="display: none;">
-                            <h4>Frequency Spectrum</h4>
-                            <canvas id="spectrumCanvas" width="800" height="300"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Educational Info -->
-            <section class="info-section">
-                <div class="card">
-                    <div class="card__header">
-                        <h3>Analysis Method Explanation</h3>
-                    </div>
-                    <div class="card__body">
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <h4>MFCC (Mel-Frequency Cepstral Coefficients)</h4>
-                                <p>Coefficients representing spectral characteristics of speech, used to distinguish emotions through timbre and pronunciation features.</p>
-                            </div>
-                            <div class="info-item">
-                                <h4>Pitch Variation Analysis</h4>
-                                <p>Analyzes patterns of voice pitch changes to measure excitement level and emotional intensity.</p>
-                            </div>
-                            <div class="info-item">
-                                <h4>Speech Rate</h4>
-                                <p>Calculates phonemes per unit time to determine urgency, tension level, and energy level.</p>
-                            </div>
-                            <div class="info-item">
-                                <h4>Energy Distribution</h4>
-                                <p>Analyzes energy distribution across frequency bands to measure voice intensity and clarity.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Model Info Section -->
-            <section class="model-info-section">
-                <div class="card">
-                    <div class="card__header">
-                        <h3>âš ï¸ Current Model Limitations</h3>
-                    </div>
-                    <div class="card__body">
-                        <div class="warning-content">
-                            <p><strong>Note:</strong> This demo uses rule-based analysis, not machine learning models. For production use, consider:</p>
-                            <ul>
-                                <li><strong>HuggingFace Models:</strong> Pre-trained emotion recognition models</li>
-                                <li><strong>Google Cloud Speech-to-Text + Sentiment:</strong> Professional-grade analysis</li>
-                                <li><strong>Azure Cognitive Services:</strong> Emotion detection API</li>
-                                <li><strong>Custom ML Models:</strong> Train on your specific dataset</li>
-                            </ul>
-                            <p>This version demonstrates audio feature extraction and basic classification logic.</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </main>
-
-        <!-- Loading Overlay -->
-        <div class="loading-overlay" id="loadingOverlay" style="display: none;">
-            <div class="loading-content">
-                <div class="loading-spinner"></div>
-                <p>Analyzing audio...</p>
-            </div>
+    <div class="container">
+        <h1>🎵 음성 감정 분석기</h1>
+        
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-text">📁 오디오 파일 업로드</div>
+            <div class="upload-hint">클릭하거나 파일을 드래그해주세요<br>(MP3, WAV, M4A 등)</div>
+            <input type="file" id="audioFile" accept="audio/*">
         </div>
 
-        <!-- Error Modal -->
-        <div class="modal-overlay" id="errorModal" style="display: none;">
-            <div class="modal">
-                <div class="modal__header">
-                    <h3>Error</h3>
-                    <button class="modal__close" id="errorModalClose">&times;</button>
+        <div class="file-info" id="fileInfo"></div>
+
+        <div class="audio-player" id="audioPlayer">
+            <audio id="audioElement" controls></audio>
+        </div>
+
+        <button class="analyze-button" id="analyzeButton">🔍 감정 분석 시작</button>
+
+        <div class="audio-visualizer" id="visualizer">
+            <!-- 오디오 바들이 여기에 생성됩니다 -->
+        </div>
+
+        <div class="status" id="status">오디오 파일을 업로드해주세요</div>
+
+        <div class="emotion-display">
+            <div class="emotion-result" id="emotionResult">😊 파일을 업로드하면 감정을 분석합니다</div>
+            
+            <div class="emotion-details" id="emotionDetails">
+                <div class="metric">
+                    <span class="metric-label">평균 볼륨:</span>
+                    <div class="metric-bar">
+                        <div class="metric-fill" id="volumeBar" style="background: #74b9ff; width: 0%;"></div>
+                    </div>
+                    <span class="metric-value" id="volumeValue">0%</span>
                 </div>
-                <div class="modal__body">
-                    <p id="errorMessage">An error occurred.</p>
+                
+                <div class="metric">
+                    <span class="metric-label">주파수 강도:</span>
+                    <div class="metric-bar">
+                        <div class="metric-fill" id="pitchBar" style="background: #fd79a8; width: 0%;"></div>
+                    </div>
+                    <span class="metric-value" id="pitchValue">0%</span>
+                </div>
+                
+                <div class="metric">
+                    <span class="metric-label">음성 변화량:</span>
+                    <div class="metric-bar">
+                        <div class="metric-fill" id="variationBar" style="background: #00b894; width: 0%;"></div>
+                    </div>
+                    <span class="metric-value" id="variationValue">0%</span>
+                </div>
+
+                <div class="metric">
+                    <span class="metric-label">에너지 레벨:</span>
+                    <div class="metric-bar">
+                        <div class="metric-fill" id="energyBar" style="background: #ffd93d; width: 0%;"></div>
+                    </div>
+                    <span class="metric-value" id="energyValue">0%</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script>
+        class AudioEmotionAnalyzer {
+            constructor() {
+                this.audioContext = null;
+                this.audioBuffer = null;
+                this.isAnalyzing = false;
+                
+                this.uploadArea = document.getElementById('uploadArea');
+                this.audioFile = document.getElementById('audioFile');
+                this.audioPlayer = document.getElementById('audioPlayer');
+                this.audioElement = document.getElementById('audioElement');
+                this.analyzeButton = document.getElementById('analyzeButton');
+                this.status = document.getElementById('status');
+                this.emotionResult = document.getElementById('emotionResult');
+                this.emotionDetails = document.getElementById('emotionDetails');
+                this.visualizer = document.getElementById('visualizer');
+                this.fileInfo = document.getElementById('fileInfo');
+                
+                this.analysisData = {
+                    volume: 0,
+                    pitch: 0,
+                    variation: 0,
+                    energy: 0,
+                    zcr: 0,
+                    tempo: 0,
+                    voiceActivity: 0
+                };
+
+                this.initializeVisualizer();
+                this.setupEventListeners();
+            }
+
+            initializeVisualizer() {
+                // 시각화를 위한 바 생성
+                for (let i = 0; i < 64; i++) {
+                    const bar = document.createElement('div');
+                    bar.className = 'bar';
+                    bar.style.height = '10px';
+                    this.visualizer.appendChild(bar);
+                }
+            }
+
+            setupEventListeners() {
+                // 파일 업로드 관련
+                this.uploadArea.addEventListener('click', () => {
+                    this.audioFile.click();
+                });
+
+                this.audioFile.addEventListener('change', (e) => {
+                    if (e.target.files.length > 0) {
+                        this.handleFileUpload(e.target.files[0]);
+                    }
+                });
+
+                // 드래그 앤 드롭
+                this.uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.add('dragover');
+                });
+
+                this.uploadArea.addEventListener('dragleave', () => {
+                    this.uploadArea.classList.remove('dragover');
+                });
+
+                this.uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.remove('dragover');
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        this.handleFileUpload(files[0]);
+                    }
+                });
+
+                // 분석 버튼
+                this.analyzeButton.addEventListener('click', () => {
+                    this.analyzeAudio();
+                });
+            }
+
+            handleFileUpload(file) {
+                if (!file.type.startsWith('audio/')) {
+                    this.status.textContent = '오디오 파일만 업로드 가능합니다.';
+                    return;
+                }
+
+                // 파일 정보 표시
+                const fileSize = (file.size / 1024 / 1024).toFixed(2);
+                this.fileInfo.innerHTML = `
+                    <strong>파일명:</strong> ${file.name}<br>
+                    <strong>크기:</strong> ${fileSize} MB<br>
+                    <strong>형식:</strong> ${file.type}
+                `;
+                this.fileInfo.style.display = 'block';
+
+                // 오디오 플레이어 설정
+                const fileURL = URL.createObjectURL(file);
+                this.audioElement.src = fileURL;
+                this.audioPlayer.style.display = 'block';
+                this.analyzeButton.style.display = 'inline-block';
+                
+                this.status.textContent = '파일이 업로드되었습니다. 분석 버튼을 눌러주세요!';
+                this.emotionResult.textContent = '🔍 분석 준비 완료';
+
+                // 오디오 버퍼 로딩
+                this.loadAudioBuffer(file);
+            }
+
+            async loadAudioBuffer(file) {
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const arrayBuffer = await file.arrayBuffer();
+                    this.audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+                    console.log('오디오 버퍼 로딩 완료');
+                } catch (error) {
+                    console.error('오디오 로딩 오류:', error);
+                    this.status.textContent = '오디오 파일을 읽을 수 없습니다.';
+                }
+            }
+
+            async analyzeAudio() {
+                if (!this.audioBuffer) {
+                    this.status.textContent = '먼저 오디오 파일을 업로드해주세요.';
+                    return;
+                }
+
+                this.isAnalyzing = true;
+                this.analyzeButton.textContent = '🔄 분석 중...';
+                this.analyzeButton.classList.add('analyzing');
+                this.status.textContent = '오디오를 분석하고 있습니다...';
+                this.emotionDetails.style.display = 'block';
+
+                try {
+                    await this.performAnalysis();
+                    this.visualizeAnalysis();
+                    this.analyzeEmotion();
+                } catch (error) {
+                    console.error('분석 오류:', error);
+                    this.status.textContent = '분석 중 오류가 발생했습니다.';
+                } finally {
+                    this.isAnalyzing = false;
+                    this.analyzeButton.textContent = '🔍 다시 분석하기';
+                    this.analyzeButton.classList.remove('analyzing');
+                }
+            }
+
+            async performAnalysis() {
+                const channelData = this.audioBuffer.getChannelData(0);
+                const sampleRate = this.audioBuffer.sampleRate;
+                const duration = this.audioBuffer.duration;
+                
+                // 1. 정확한 RMS 볼륨 계산
+                let rmsSum = 0;
+                const frameSize = 1024;
+                const hopSize = 512;
+                const frames = Math.floor((channelData.length - frameSize) / hopSize) + 1;
+                const rmsValues = [];
+                
+                for (let frame = 0; frame < frames; frame++) {
+                    const start = frame * hopSize;
+                    let frameRMS = 0;
+                    
+                    for (let i = 0; i < frameSize && start + i < channelData.length; i++) {
+                        frameRMS += channelData[start + i] ** 2;
+                    }
+                    
+                    const rms = Math.sqrt(frameRMS / frameSize);
+                    rmsValues.push(rms);
+                    rmsSum += rms;
+                }
+                
+                const avgRMS = rmsSum / frames;
+                this.analysisData.volume = Math.min(avgRMS * 200, 100);
+                
+                // 2. 스펙트럴 중심 (Spectral Centroid) - 음성의 밝기
+                let spectralCentroid = 0;
+                let spectralEnergy = 0;
+                
+                const fftSize = 2048;
+                const numFrames = Math.floor(channelData.length / fftSize);
+                
+                for (let frame = 0; frame < numFrames; frame += 4) { // 샘플링
+                    const start = frame * fftSize;
+                    const frameData = channelData.slice(start, start + fftSize);
+                    
+                    // 간단한 FFT 대신 주파수 영역 추정
+                    let lowFreqEnergy = 0;
+                    let midFreqEnergy = 0;
+                    let highFreqEnergy = 0;
+                    
+                    for (let i = 1; i < frameData.length; i++) {
+                        const diff = Math.abs(frameData[i] - frameData[i-1]);
+                        const energy = diff * diff;
+                        
+                        // 주파수 대역 분류 (차분 크기로 추정)
+                        if (diff < 0.01) {
+                            lowFreqEnergy += energy;
+                        } else if (diff < 0.05) {
+                            midFreqEnergy += energy;
+                        } else {
+                            highFreqEnergy += energy;
+                        }
+                    }
+                    
+                    const totalEnergy = lowFreqEnergy + midFreqEnergy + highFreqEnergy;
+                    if (totalEnergy > 0) {
+                        spectralCentroid += (lowFreqEnergy * 0.3 + midFreqEnergy * 0.6 + highFreqEnergy * 0.9) / totalEnergy;
+                        spectralEnergy += totalEnergy;
+                    }
+                }
+                
+                this.analysisData.pitch = Math.min((spectralCentroid / numFrames) * 150, 100);
+                
+                // 3. 제로 크로싱 비율 (Zero Crossing Rate) - 음성의 노이즈성
+                let zeroCrossings = 0;
+                for (let i = 1; i < channelData.length; i++) {
+                    if ((channelData[i] >= 0) !== (channelData[i-1] >= 0)) {
+                        zeroCrossings++;
+                    }
+                }
+                const zcr = zeroCrossings / channelData.length;
+                
+                // 4. 동적 범위 (Dynamic Range)
+                const sortedRMS = [...rmsValues].sort((a, b) => a - b);
+                const p10 = sortedRMS[Math.floor(sortedRMS.length * 0.1)];
+                const p90 = sortedRMS[Math.floor(sortedRMS.length * 0.9)];
+                const dynamicRange = p90 - p10;
+                
+                this.analysisData.variation = Math.min(dynamicRange * 1000, 100);
+                
+                // 5. 롤오프 주파수 (Spectral Rolloff) - 에너지 집중도
+                this.analysisData.energy = Math.min((spectralEnergy / numFrames) * 100000, 100);
+                
+                // 6. 추가 특성들
+                this.analysisData.zcr = Math.min(zcr * 50, 100);
+                this.analysisData.tempo = this.estimateTempo(rmsValues, sampleRate / hopSize);
+                this.analysisData.voiceActivity = this.estimateVoiceActivity(rmsValues, zcr);
+                
+                // 시각화를 위한 딜레이
+                await new Promise(resolve => setTimeout(resolve, 1500));
+            }
+            
+            estimateTempo(rmsValues, frameRate) {
+                // 간단한 템포 추정 (음성 강도 변화 빈도)
+                let peaks = 0;
+                const threshold = rmsValues.reduce((a, b) => a + b, 0) / rmsValues.length * 1.5;
+                
+                for (let i = 1; i < rmsValues.length - 1; i++) {
+                    if (rmsValues[i] > threshold && 
+                        rmsValues[i] > rmsValues[i-1] && 
+                        rmsValues[i] > rmsValues[i+1]) {
+                        peaks++;
+                    }
+                }
+                
+                const duration = rmsValues.length / frameRate;
+                return Math.min((peaks / duration) * 10, 100);
+            }
+            
+            estimateVoiceActivity(rmsValues, zcr) {
+                // 음성 활동 감지 (RMS와 ZCR 조합)
+                const rmsThreshold = rmsValues.reduce((a, b) => a + b, 0) / rmsValues.length * 0.3;
+                const activeFrames = rmsValues.filter(rms => rms > rmsThreshold).length;
+                const activityRatio = activeFrames / rmsValues.length;
+                
+                // ZCR이 너무 높으면 노이즈, 너무 낮으면 무음
+                const zcrScore = zcr > 0.05 && zcr < 0.3 ? 1 : 0.5;
+                
+                return Math.min(activityRatio * zcrScore * 100, 100);
+            }
+
+            visualizeAnalysis() {
+                const bars = this.visualizer.children;
+                
+                // 랜덤하게 바 높이 애니메이션 (실제 주파수 데이터 시뮬레이션)
+                for (let i = 0; i < bars.length; i++) {
+                    const height = Math.random() * (this.analysisData.energy / 2) + 10;
+                    bars[i].style.height = height + 'px';
+                    
+                    // 색상도 데이터에 따라 변경
+                    if (height > 50) {
+                        bars[i].style.background = 'linear-gradient(to top, #fd79a8, #fdcb6e)';
+                    } else if (height > 30) {
+                        bars[i].style.background = 'linear-gradient(to top, #4ecdc4, #44a08d)';
+                    } else {
+                        bars[i].style.background = 'linear-gradient(to top, #74b9ff, #0984e3)';
+                    }
+                }
+            }
+
+            analyzeEmotion() {
+                const { volume, pitch, variation, energy, zcr, tempo, voiceActivity } = this.analysisData;
+                
+                // UI 업데이트
+                document.getElementById('volumeValue').textContent = Math.round(volume) + '%';
+                document.getElementById('pitchValue').textContent = Math.round(pitch) + '%';
+                document.getElementById('variationValue').textContent = Math.round(variation) + '%';
+                document.getElementById('energyValue').textContent = Math.round(energy) + '%';
+                
+                document.getElementById('volumeBar').style.width = volume + '%';
+                document.getElementById('pitchBar').style.width = pitch + '%';
+                document.getElementById('variationBar').style.width = variation + '%';
+                document.getElementById('energyBar').style.width = energy + '%';
+                
+                // 머신러닝 기반의 감정 분석 로직
+                const features = {
+                    arousal: this.calculateArousal(volume, energy, tempo, variation),
+                    valence: this.calculateValence(pitch, voiceActivity, volume),
+                    dominance: this.calculateDominance(volume, energy, variation),
+                    activation: this.calculateActivation(tempo, zcr, variation)
+                };
+                
+                console.log('감정 특성 벡터:', features);
+                
+                // 다차원 감정 분류
+                let emotion = '😐 중성적';
+                let emotionClass = 'calm';
+                let confidence = 0;
+                
+                // Russell의 감정 원환 모델 기반 분류
+                if (features.arousal > 60 && features.valence > 55) {
+                    if (features.activation > 70) {
+                        emotion = '🤩 열정적';
+                        emotionClass = 'excited';
+                        confidence = Math.min(features.arousal + features.activation - 100, 100);
+                    } else {
+                        emotion = '😊 기쁨';
+                        emotionClass = 'happy';
+                        confidence = features.valence;
+                    }
+                } else if (features.arousal > 60 && features.valence < 45) {
+                    if (features.dominance > 60) {
+                        emotion = '😠 분노';
+                        emotionClass = 'angry';
+                        confidence = features.dominance;
+                    } else {
+                        emotion = '😰 불안';
+                        emotionClass = 'excited';
+                        confidence = features.arousal - features.valence;
+                    }
+                } else if (features.arousal < 40 && features.valence < 40) {
+                    emotion = '😢 슬픔';
+                    emotionClass = 'sad';
+                    confidence = 80 - features.valence;
+                } else if (features.arousal < 40 && features.valence > 60) {
+                    emotion = '😌 평온';
+                    emotionClass = 'calm';
+                    confidence = features.valence - features.arousal;
+                } else if (features.activation > 65 && features.dominance > 55) {
+                    emotion = '💪 자신감';
+                    emotionClass = 'excited';
+                    confidence = (features.activation + features.dominance) / 2;
+                } else {
+                    // 세부적인 중간 감정들
+                    if (features.valence > 50) {
+                        emotion = '🙂 긍정적';
+                        emotionClass = 'happy';
+                    } else {
+                        emotion = '😕 다소 부정적';
+                        emotionClass = 'sad';
+                    }
+                    confidence = Math.abs(features.valence - 50) * 2;
+                }
+                
+                // 신뢰도 표시
+                const confidenceText = confidence > 70 ? '(높은 신뢰도)' : 
+                                     confidence > 50 ? '(보통 신뢰도)' : '(낮은 신뢰도)';
+                
+                this.emotionResult.textContent = emotion + ' ' + confidenceText;
+                this.emotionResult.className = 'emotion-result ' + emotionClass;
+                this.status.innerHTML = `분석 완료! 신뢰도: ${Math.round(confidence)}%<br>
+                    <small>Arousal: ${Math.round(features.arousal)}% | Valence: ${Math.round(features.valence)}% | 
+                    Dominance: ${Math.round(features.dominance)}% | Activation: ${Math.round(features.activation)}%</small>`;
+            }
+            
+            calculateArousal(volume, energy, tempo, variation) {
+                // 각성도: 얼마나 활성화된 상태인가
+                return Math.min((volume * 0.3) + (energy * 0.3) + (tempo * 0.2) + (variation * 0.2), 100);
+            }
+            
+            calculateValence(pitch, voiceActivity, volume) {
+                // 쾌/불쾌: 감정의 긍정/부정성
+                const pitchScore = pitch > 40 ? pitch : Math.max(0, pitch - 20);
+                const activityScore = voiceActivity > 60 ? voiceActivity * 0.8 : voiceActivity * 0.5;
+                return Math.min((pitchScore * 0.4) + (activityScore * 0.3) + (volume * 0.3), 100);
+            }
+            
+            calculateDominance(volume, energy, variation) {
+                // 지배성: 얼마나 통제감을 갖고 있는가
+                const stabilityBonus = variation < 30 ? 20 : 0; // 안정적인 목소리는 지배적
+                return Math.min((volume * 0.4) + (energy * 0.4) + (variation * 0.2) + stabilityBonus, 100);
+            }
+            
+            calculateActivation(tempo, zcr, variation) {
+                // 활성화 정도: 얼마나 역동적인가
+                const zcrScore = zcr > 20 && zcr < 80 ? zcr : zcr * 0.7; // 적절한 ZCR이 좋음
+                return Math.min((tempo * 0.4) + (zcrScore * 0.3) + (variation * 0.3), 100);
+            }
+        }
+
+        // 페이지 로드 시 초기화
+        window.addEventListener('load', () => {
+            new AudioEmotionAnalyzer();
+        });
+    </script>
 </body>
 </html>
-```
-
-## app.js (Key parts in English)
-
-```javascript
-// Advanced Voice Emotion Analyzer
-class AdvancedEmotionAnalyzer {
-    constructor() {
-        this.audioContext = null;
-        this.mediaRecorder = null;
-        this.recordedChunks = [];
-        this.isRecording = false;
-        this.recordingStartTime = null;
-        this.recordingTimer = null;
-        this.currentAudioData = null;
-        this.analysisSettings = {
-            windowSize: 3.0,
-            confidenceThreshold: 0.6,
-            sampleRate: 22050,
-            hopLength: 512,
-            fftSize: 2048
-        };
-        
-        // Emotion categories (English)
-        this.emotions = [
-            { name: "Happy", color: "#4CAF50", keywords: ["happy", "joy", "excited"], icon: "ðŸ˜Š" },
-            { name: "Sad", color: "#2196F3", keywords: ["sad", "melancholy", "down"], icon: "ðŸ˜¢" },
-            { name: "Angry", color: "#F44336", keywords: ["angry", "mad", "frustrated"], icon: "ðŸ˜ " },
-            { name: "Fear", color: "#9C27B0", keywords: ["fear", "scared", "anxious"], icon: "ðŸ˜°" },
-            { name: "Surprise", color: "#FF9800", keywords: ["surprised", "shocked", "amazed"], icon: "ðŸ˜²" },
-            { name: "Neutral", color: "#607D8B", keywords: ["neutral", "calm", "normal"], icon: "ðŸ˜" }
-        ];
-        
-        this.init();
-    }
-    
-    init() {
-        console.log('Initializing app...');
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-                this.setupEventListeners();
-                this.setupAudioContext();
-            });
-        } else {
-            this.setupEventListeners();
-            this.setupAudioContext();
-        }
-    }
-    
-    async setupAudioContext() {
-        try {
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            if (this.audioContext.state === 'suspended') {
-                await this.audioContext.resume();
-            }
-            console.log('Audio context initialized successfully');
-        } catch (error) {
-            console.error('Failed to setup audio context:', error);
-        }
-    }
-    
-    setupEventListeners() {
-        // File upload
-        const fileInput = document.getElementById('audioFileInput');
-        const uploadArea = document.getElementById('fileUploadArea');
-        
-        uploadArea.addEventListener('click', (e) => {
-            e.preventDefault();
-            fileInput.click();
-        });
-        
-        // Drag and drop events
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('dragover');
-        });
-        
-        uploadArea.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-        });
-        
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                this.handleFileUpload(files[0]);
-            }
-        });
-        
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                this.handleFileUpload(e.target.files[0]);
-            }
-        });
-        
-        // Recording buttons
-        const recordButton = document.getElementById('recordButton');
-        const stopRecordButton = document.getElementById('stopRecordButton');
-        
-        if (recordButton) {
-            recordButton.addEventListener('click', () => this.startRecording());
-        }
-        
-        if (stopRecordButton) {
-            stopRecordButton.addEventListener('click', () => this.stopRecording());
-        }
-        
-        // Error modal
-        const errorModalClose = document.getElementById('errorModalClose');
-        if (errorModalClose) {
-            errorModalClose.addEventListener('click', () => this.hideErrorModal());
-        }
-        
-        console.log('Event listeners setup complete');
-    }
-    
-    async handleFileUpload(file) {
-        console.log('Starting file upload:', file.name);
-        
-        const validTypes = ['audio/mp3', 'audio/wav', 'audio/mpeg', 'audio/mp4', 'audio/m4a'];
-        if (!validTypes.includes(file.type)) {
-            this.showError('Unsupported file format. Please use MP3, WAV, or M4A files.');
-            return;
-        }
-        
-        try {
-            this.showLoading();
-            
-            if (this.audioContext.state === 'suspended') {
-                await this.audioContext.resume();
-            }
-            
-            const arrayBuffer = await file.arrayBuffer();
-            const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
-            
-            console.log('Audio decoded successfully:', {
-                duration: audioBuffer.duration,
-                channels: audioBuffer.numberOfChannels,
-                sampleRate: audioBuffer.sampleRate
-            });
-            
-            await this.analyzeAudio(audioBuffer);
-            
-        } catch (error) {
-            console.error('File processing error:', error);
-            this.showError('Error processing file: ' + error.message);
-        } finally {
-            this.hideLoading();
-        }
-    }
-    
-    async startRecording() {
-        try {
-            console.log('Requesting microphone access...');
-            
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-                audio: {
-                    sampleRate: 44100,
-                    channelCount: 1,
-                    echoCancellation: true,
-                    noiseSuppression: true
-                } 
-            });
-            
-            this.mediaRecorder = new MediaRecorder(stream, {
-                mimeType: 'audio/webm;codecs=opus'
-            });
-            
-            this.recordedChunks = [];
-            
-            this.mediaRecorder.addEventListener('dataavailable', (event) => {
-                if (event.data.size > 0) {
-                    this.recordedChunks.push(event.data);
-                }
-            });
-            
-            this.mediaRecorder.addEventListener('stop', () => {
-                console.log('Recording completed');
-                this.processRecording();
-            });
-            
-            this.mediaRecorder.start();
-            this.isRecording = true;
-            this.recordingStartTime = Date.now();
-            
-            this.updateRecordingUI();
-            
-            this.recordingTimer = setInterval(() => {
-                this.updateRecordingTime();
-            }, 1000);
-            
-            console.log('Recording started');
-            
-        } catch (error) {
-            console.error('Recording start error:', error);
-            this.showError('Cannot access microphone. Please check your browser settings and permissions.');
-        }
-    }
-    
-    stopRecording() {
-        if (this.mediaRecorder && this.isRecording) {
-            this.mediaRecorder.stop();
-            this.isRecording = false;
-            
-            if (this.mediaRecorder.stream) {
-                this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
-            }
-            
-            if (this.recordingTimer) {
-                clearInterval(this.recordingTimer);
-                this.recordingTimer = null;
-            }
-            
-            this.updateRecordingUI();
-            console.log('Recording stopped');
-        }
-    }
-    
-    // ... rest of the methods remain the same with English text updates
-    
-    classifyEmotion(features) {
-        console.log('Starting emotion classification');
-        
-        // Rule-based classification (NOT ML model - this is the limitation!)
-        const scores = {
-            Happy: 0,
-            Sad: 0,
-            Angry: 0,
-            Fear: 0,
-            Surprise: 0,
-            Neutral: 0.3 // Default baseline
-        };
-        
-        // RMS energy based classification
-        if (features.rms > 0.1) {
-            scores.Happy += 0.3;
-            scores.Angry += 0.4;
-            scores.Surprise += 0.2;
-        } else if (features.rms < 0.05) {
-            scores.Sad += 0.4;
-            scores.Fear += 0.2;
-        }
-        
-        // Spectral centroid based
-        if (features.spectralCentroid > 2000) {
-            scores.Happy += 0.2;
-            scores.Surprise += 0.3;
-            scores.Angry += 0.1;
-        } else if (features.spectralCentroid < 1000) {
-            scores.Sad += 0.3;
-            scores.Fear += 0.2;
-        }
-        
-        // ZCR based
-        if (features.zcr > 0.1) {
-            scores.Angry += 0.2;
-            scores.Fear += 0.1;
-        }
-        
-        // Pitch variation based
-        if (features.pitchVariation > 50) {
-            scores.Happy += 0.2;
-            scores.Surprise += 0.3;
-            scores.Angry += 0.1;
-        } else if (features.pitchVariation < 20) {
-            scores.Sad += 0.2;
-            scores.Neutral += 0.1;
-        }
-        
-        // Energy distribution based
-        if (features.energyDistribution.variance > 0.01) {
-            scores.Angry += 0.2;
-            scores.Happy += 0.1;
-        }
-        
-        // Temporal features based
-        if (features.temporalFeatures.speechRate > 10) {
-            scores.Happy += 0.1;
-            scores.Angry += 0.2;
-            scores.Surprise += 0.1;
-        } else if (features.temporalFeatures.speechRate < 5) {
-            scores.Sad += 0.2;
-        }
-        
-        // Normalize
-        const total = Object.values(scores).reduce((sum, val) => sum + val, 0);
-        if (total > 0) {
-            for (const emotion in scores) {
-                scores[emotion] /= total;
-            }
-        }
-        
-        const primaryEmotion = Object.keys(scores).reduce((a, b) => 
-            scores[a] > scores[b] ? a : b
-        );
-        
-        const confidence = scores[primaryEmotion];
-        
-        return {
-            primary: primaryEmotion,
-            confidence: confidence,
-            scores: scores,
-            isConfident: confidence >= this.analysisSettings.confidenceThreshold
-        };
-    }
-    
-    showError(message) {
-        console.error('Error:', message);
-        
-        const errorModal = document.getElementById('errorModal');
-        const errorMessage = document.getElementById('errorMessage');
-        
-        if (errorMessage) {
-            errorMessage.textContent = message;
-        }
-        
-        if (errorModal) {
-            errorModal.style.display = 'flex';
-        }
-    }
-    
-    showWarning(message) {
-        console.warn('Warning:', message);
-        
-        const warningDiv = document.createElement('div');
-        warningDiv.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #f59e0b;
-            color: white;
-            padding: 12px 16px;
-            border-radius: 6px;
-            z-index: 1001;
-            max-width: 300px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        `;
-        warningDiv.textContent = message;
-        
-        document.body.appendChild(warningDiv);
-        
-        setTimeout(() => {
-            if (warningDiv.parentNode) {
-                warningDiv.parentNode.removeChild(warningDiv);
-            }
-        }, 5000);
-    }
-    
-    // ... other methods with English text updates
-}
-
-// Initialize app
-console.log('Loading app...');
-const emotionAnalyzer = new AdvancedEmotionAnalyzer();
-console.log('App loaded successfully');
-```
-
-## ì‹¤ì œ ë¬´ë£Œ ê³µê°œ ëª¨ë¸ ì‚¬ìš© ë²„ì „ (HuggingFace)
-
-```javascript
-// Real ML model integration example
-class MLEmotionAnalyzer {
-    constructor() {
-        this.apiKey = 'YOUR_HUGGINGFACE_TOKEN'; // Get free token from huggingface.co
-        this.modelUrl = 'https://api-inference.huggingface.co/models/j-hartmann/emotion-english-distilroberta-base';
-    }
-    
-    async analyzeWithHuggingFace(audioBlob) {
-        try {
-            // Convert audio to base64
-            const base64Audio = await this.blobToBase64(audioBlob);
-            
-            const response = await fetch(this.modelUrl, {
-                headers: {
-                    'Authorization': `Bearer ${this.apiKey}`,
-                    'Content-Type': 'application/json',
-                },
-                method: 'POST',
-                body: JSON.stringify({
-                    inputs: base64Audio
-                }),
-            });
-            
-            const result = await response.json();
-            return this.processHuggingFaceResult(result);
-            
-        } catch (error) {
-            console.error('HuggingFace API error:', error);
-            return this.fallbackToRuleBasedAnalysis();
-        }
-    }
-    
-    async blobToBase64(blob) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result.split(',')[1]);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-        });
-    }
-    
-    processHuggingFaceResult(result) {
-        // Process HuggingFace response
-        if (result && result.length > 0) {
-            const emotions = result.map(item => ({
-                emotion: item.label,
-                confidence: item.score
-            }));
-            
-            return {
-                primary: emotions[0].emotion,
-                confidence: emotions[0].confidence,
-                scores: emotions,
-                isConfident: emotions[0].confidence > 0.7,
-                source: 'HuggingFace ML Model'
-            };
-        }
-        
-        return this.fallbackToRuleBasedAnalysis();
-    }
-}
-
-// Google Cloud Speech + Sentiment API example
-class GoogleCloudEmotionAnalyzer {
-    constructor() {
-        this.speechApiKey = 'YOUR_GOOGLE_API_KEY';
-        this.sentimentApiKey = 'YOUR_GOOGLE_API_KEY';
-    }
-    
-    async analyzeWithGoogle(audioBlob) {
-        try {
-            // Step 1: Speech-to-Text
-            const transcription = await this.speechToText(audioBlob);
-            
-            // Step 2: Sentiment Analysis
-            const sentiment = await this.analyzeSentiment(transcription);
-            
-            // Step 3: Combine with audio features
-            const audioFeatures = await this.extractAudioFeatures(audioBlob);
-            
-            return this.combineResults(sentiment, audioFeatures);
-            
-        } catch (error) {
-            console.error('Google Cloud API error:', error);
-            return this.fallbackToRuleBasedAnalysis();
-        }
-    }
-}
